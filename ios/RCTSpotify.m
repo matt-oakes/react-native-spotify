@@ -21,6 +21,7 @@ NSString* const RCTSpotifyWebAPIDomain = @"com.spotify.web-api";
 	BOOL initialized;
 	SPTAuth* _auth;
 	SPTAudioStreamingController* _player;
+	BOOL hasListeners;
 	
 	NSDictionary* _options;
 	NSNumber* _cacheSize;
@@ -152,6 +153,22 @@ NSString* const RCTSpotifyWebAPIDomain = @"com.spotify.web-api";
 #pragma mark - React Native functions
 
 RCT_EXPORT_MODULE()
+
+- (NSArray<NSString *> *)supportedEvents
+{
+  return @[@"AuthenticationState", @"PlaybackStarted", @"PlaybackStopped"];
+}
+
+- (void)startObserving
+{
+  hasListeners = YES;
+}
+
+- (void)stopObserving
+{
+  hasListeners = NO;
+}
+
 
 RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(test)
 {
@@ -1007,6 +1024,10 @@ RCT_EXPORT_METHOD(getTracksAudioFeatures:(NSArray<NSString*>*)trackIDs options:(
 	{
 		response(YES, nil);
 	}
+
+	if (hasListeners) {
+		[self sendEventWithName:@"AuthenticationState" body:@{@"authenticated": @(YES)}];
+	}
 }
 
 -(void)audioStreaming:(SPTAudioStreamingController*)audioStreaming didReceiveError:(NSError*)error
@@ -1042,6 +1063,10 @@ RCT_EXPORT_METHOD(getTracksAudioFeatures:(NSArray<NSString*>*)trackIDs options:(
 	{
 		response(nil);
 	}
+
+	if (hasListeners) {
+		[self sendEventWithName:@"AuthenticationState" body:@{@"authenticated": @(NO)}];
+	}
 }
 
 
@@ -1059,6 +1084,21 @@ RCT_EXPORT_METHOD(getTracksAudioFeatures:(NSArray<NSString*>*)trackIDs options:(
 		[self deactivateAudioSession];
 	}
 }
+
+- (void)audioStreaming:(SPTAudioStreamingController*)audioStreaming didStartPlayingTrack:(NSString *)trackUri
+{
+  if (hasListeners) {
+		[self sendEventWithName:@"PlaybackStarted" body:@{@"trackUri": trackUri}];
+	}
+}
+
+- (void)audioStreaming:(SPTAudioStreamingController*)audioStreaming didStopPlayingTrack:(NSString *)trackUri
+{
+  if (hasListeners) {
+		[self sendEventWithName:@"PlaybackStopped" body:@{@"trackUri": trackUri}];
+	}
+}
+
 
 @end
 
