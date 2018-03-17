@@ -195,6 +195,10 @@ RCT_EXPORT_METHOD(initialize:(NSDictionary*)options completion:(RCTResponseSende
 	_cacheSize = @(1024 * 1024 * 64);
 	_loginPlayerResponses = [NSMutableArray array];
 	_logoutResponses = [NSMutableArray array];
+    
+    //set the delegates
+    _player.delegate = self;
+    _player.playbackDelegate = self;
 	
 	//get options
 	_auth.clientID = options[@"clientID"];
@@ -309,8 +313,6 @@ RCT_EXPORT_METHOD(isInitializedAsync:(RCTResponseSenderBlock)completion)
 	}
 	else if([_player startWithClientId:_auth.clientID audioController:nil allowCaching:allowCaching error:&error])
 	{
-		_player.delegate = self;
-		_player.playbackDelegate = self;
 		if(allowCaching)
 		{
 			_player.diskCache = [[SPTDiskCache alloc] initWithCapacity:_cacheSize.unsignedIntegerValue];
